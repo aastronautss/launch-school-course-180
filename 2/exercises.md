@@ -179,3 +179,377 @@ SELECT name,
 FROM menu_items
 ORDER BY profit;
 ```
+
+## Loading Database Dumps
+
+### 1.
+
+The file:
+
+1. Drops any existing table called `films`.
+2. Creates a table called `films` that has three columns.
+3. Inserts three rows into the `films` table.
+
+### 2.
+
+```sql
+SELECT * FROM films;
+```
+
+### 3.
+
+```sql
+SELECT * FROM films WHERE length(title) < 12;
+```
+
+### 4.
+
+```sql
+ALTER TABLE films ADD COLUMN director VARCHAR(255);
+ALTER TABLE films ADD COLUMN duration INTEGER;
+```
+
+### 5.
+
+```sql
+UPDATE films SET director = 'John McTiernan', duration = 132 WHERE title = 'Die Hard';
+UPDATE films SET director = 'Michael Curtiz', duration = 102 WHERE title = 'Casablanca';
+UPDATE films SET director = 'Francis Ford Coppola', duration = 113 WHERE title = 'The Conversation';
+```
+
+### 6.
+
+```sql
+INSERT INTO films
+VALUES ('1984', 1956, 'sfifi', 'Michael Anderson', 90);
+
+INSERT INTO films
+VALUES ('Tinker Tailor Soldier Spy', 2011, 'espionage', 'Tomas Alfredson', 127);
+
+INSERT INTO films
+VALUES ('The Birdcage', 1996, 'comedy', 'Mike Nichols', 118);
+```
+
+### 7.
+
+```sql
+SELECT title, EXTRACT(year from current_date) - year AS age
+FROM films
+ORDER BY age ASC;
+```
+
+### 8.
+
+```sql
+SELECT title, duration
+FROM films
+WHERE duration < 120
+ORDER BY duration DESC;
+```
+
+### 9.
+
+```sql
+SELECT title
+FROM films
+ORDER BY duration DESC
+LIMIT 1;
+```
+
+## More Single Table Queries
+
+### 1.
+
+```
+createdb residents
+```
+
+### 2.
+
+```
+psql -d residents < residents_with_data.sql
+```
+
+### 3.
+
+```sql
+SELECT state, COUNT(id) FROM people GROUP BY state ORDER BY count DESC LIMIT 10;
+```
+
+### 4.
+
+```sql
+SELECT substr(email, strpos(email, '@') + 1) AS domain, count(id)
+FROM people
+GROUP BY domain
+ORDER BY count DESC;
+```
+
+### 5.
+
+```sql
+DELETE FROM people
+WHERE id = 3399;
+```
+
+### 6.
+
+```sql
+DELETE FROM people
+WHERE state = 'CA';
+```
+
+### 7.
+
+```sql
+UPDATE people
+SET given_name = UPPER(given_name)
+WHERE email LIKE '%teleworm.us';
+```
+
+### 8.
+
+```sql
+DELETE FROM people;
+```
+
+## NOT NULL and Default Values
+
+### 1.
+
+NULL in, NULL out.
+
+### 2.
+
+```sql
+ALTER TABLE employees ALTER COLUMN department SET DEFAULT 'unassigned';
+UPDATE employees SET department = 'unassigned' WHERE department IS NULL;
+ALTER TABLE employees ALTER COLUMN department SET NOT NULL;
+```
+
+### 3.
+
+```sql
+CREATE TABLE IF NOT EXISTS temperatures (
+  date DATE DEFAULT NOW() NOT NULL,
+  low INTEGER NOT NULL,
+  high INTEGER NOT NULL
+);
+```
+
+### 4.
+
+```sql
+INSERT INTO temperatures VALUES ('2016-03-01', 34, 43);
+INSERT INTO temperatures VALUES ('2016-03-02', 32, 44);
+INSERT INTO temperatures VALUES ('2016-03-03', 31, 47);
+INSERT INTO temperatures VALUES ('2016-03-04', 33, 42);
+INSERT INTO temperatures VALUES ('2016-03-05', 39, 46);
+INSERT INTO temperatures VALUES ('2016-03-06', 32, 43);
+INSERT INTO temperatures VALUES ('2016-03-07', 29, 32);
+INSERT INTO temperatures VALUES ('2016-03-08', 23, 31);
+INSERT INTO temperatures VALUES ('2016-03-09', 17, 28);
+```
+
+### 5.
+
+```sql
+SELECT date, (high + low) / 2 AS average
+FROM temperatures
+WHERE date BETWEEN '2016-03-02' AND '2016-03-08';
+```
+
+### 6.
+
+```sql
+ALTER TABLE temperatures
+ADD COLUMN rainfall INTEGER DEFAULT 0;
+```
+
+### 7.
+
+```sql
+UPDATE temperatures
+SET rainfall = ((high + low) / 2) - 35
+WHERE (high + low) / 2 > 35;
+```
+
+### 8.
+
+```sql
+ALTER TABLE temperatures
+ALTER COLUMN rainfall
+TYPE NUMERIC(6, 3);
+
+UPDATE temperatures
+SET rainfall = rainfall * .039;
+```
+
+### 9.
+
+```sql
+ALTER TABLE temperatures
+RENAME TO weather;
+```
+
+### 10.
+
+```
+\d weather
+```
+
+### 11.
+
+```
+pg_dump -d sql-course -t weather --inserts > dump.sql
+```
+
+## More Constraints
+
+### 1.
+
+```
+psql -d sql-course < films2.sql
+```
+
+### 2.
+
+```sql
+ALTER TABLE films ALTER COLUMN title SET NOT NULL;
+ALTER TABLE films ALTER COLUMN year SET NOT NULL;
+ALTER TABLE films ALTER COLUMN genre SET NOT NULL;
+ALTER TABLE films ALTER COLUMN director SET NOT NULL;
+ALTER TABLE films ALTER COLUMN duration SET NOT NULL;
+```
+
+### 3.
+
+`\d films` will show `NOT NULL` in the `modifiers` column.
+
+### 4.
+
+```sql
+ALTER TABLE films ADD CONSTRAINT title_unique UNIQUE (title);
+```
+
+### 5.
+
+The constraint will appear as an index.
+
+### 6.
+
+```sql
+ALTER TABLE films DROP CONSTRAINT title_unique;
+```
+
+### 7.
+
+```sql
+ALTER TABLE films ADD CONSTRAINT title_length CHECK (length(title) >= 1);
+```
+
+### 8.
+
+```sql
+INSERT INTO films VALUES ('', 2016, 'drama', 'Tyler Guillen', 90);
+```
+
+Gives the following error:
+
+```
+ERROR:  new row for relation "films" violates check constraint "title_length"
+DETAIL:  Failing row contains (, 2016, drama, Tyler Guillen, 90).
+```
+
+### 9.
+
+```
+Check constraints:
+    "title_length" CHECK (length(title::text) >= 1)
+```
+
+### 10.
+
+```sql
+ALTER TABLE films DROP CONSTRAINT title_length;
+```
+
+### 11.
+
+```sql
+ALTER TABLE films ADD CONSTRAINT year CHECK (year BETWEEN 1900 AND 2100);
+```
+
+### 12.
+
+```
+Check constraints:
+    "year" CHECK (year >= 1900 AND year <= 2100)
+```
+
+### 13.
+
+```sql
+ALTER TABLE films ADD CONSTRAINT director_format
+CHECK (length(director) >= 3 AND position(' ' in director) > 0);
+```
+
+### 14.
+
+```
+Check constraints:
+    "director_format" CHECK (length(director::text) >= 3 AND "position"(director::text, ' '::text) > 0)
+    "year" CHECK (year >= 1900 AND year <= 2100)
+```
+
+### 15.
+
+```sql
+UPDATE films
+SET director = 'Johnny'
+WHERE title = 'Die Hard';
+```
+
+Throws:
+
+```
+ERROR:  new row for relation "films" violates check constraint "director_name"
+DETAIL:  Failing row contains (Die Hard, 1988, action, Johnny, 132).
+```
+
+### 16.
+
+Data type, NOT NULL, and constraints.
+
+### 17.
+
+```sql
+CREATE TABLE test_table (
+  test_column_1 INTEGER,
+  test_column_2 INTEGER
+);
+
+ALTER TABLE test_table ADD CONSTRAINT test_column_size
+CHECK (test_column > 0);
+
+ALTER TABLE test_table ALTER COLUMN test_column
+SET DEFAULT 0;
+
+INSERT INTO test_table (test_column_2) VALUES (1);
+```
+
+throws:
+
+```
+ERROR:  new row for relation "test_table" violates check constraint "test_column_size"
+DETAIL:  Failing row contains (0, 1).
+```
+
+### 18.
+
+```
+\d table_name
+```
+
+## Using Keys
+
