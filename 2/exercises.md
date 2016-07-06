@@ -553,3 +553,130 @@ DETAIL:  Failing row contains (0, 1).
 
 ## Using Keys
 
+### 1.
+
+```sql
+CREATE SEQUENCE counter;
+```
+
+### 2.
+
+```sql
+SELECT nextval('counter');
+```
+
+### 3.
+
+```sql
+DROP SEQUENCE counter;
+```
+
+### 4.
+
+```sql
+CREATE SEQUENCE evens INCREMENT BY 2 MINVALUE 2;
+```
+
+### 5.
+
+`regions_id_seq`
+
+### 6.
+
+```sql
+ALTER TABLE films ADD COLUMN id serial PRIMARY KEY;
+```
+
+### 7.
+
+```
+ERROR:  duplicate key value violates unique constraint "films_pkey"
+DETAIL:  Key (id)=(3) already exists.
+```
+
+### 8.
+
+```
+ERROR:  multiple primary keys for table "films" are not allowed
+```
+
+### 9.
+
+```sql
+ALTER TABLE films DROP CONSTRAINT films_pkey;
+```
+
+## GROUP BY and Aggregate Functions
+
+### 1.
+
+```
+psql -d sql-course < films4.sql
+```
+
+### 2.
+
+```sql
+INSERT INTO films (title, year, genre, director, duration)
+VALUES ('Wayne''s World', 1992, 'comedy', 'Penelope Spheeris', 95);
+
+INSERT INTO films (title, year, genre, director, duration)
+VALUES ('Bourne Identity', 2002,  'espionage', 'Doug Liman', 118);
+```
+
+### 3.
+
+```sql
+SELECT DISTINCT genre FROM films;
+```
+
+### 4.
+
+```sql
+SELECT genre FROM films GROUP BY genre;
+```
+
+### 5.
+
+```sql
+SELECT round(avg(duration)) FROM films;
+```
+
+### 6.
+
+```sql
+SELECT genre, round(avg(duration)) FROM films GROUP BY genre;
+```
+
+### 7.
+
+```sql
+SELECT round(year / 10) * 10 AS decade, round(avg(duration)) as average_duration
+FROM films GROUP BY decade ORDER BY decade ASC;
+```
+
+### 8.
+
+```sql
+SELECT * FROM films WHERE director LIKE 'John %';
+```
+
+### 9.
+
+```sql
+SELECT genre, count(id) FROM films GROUP BY genre ORDER BY count DESC;
+```
+
+### 10.
+
+```sql
+SELECT year / 10 * 10 AS decade, genre, string_agg(title, ', ') AS films
+FROM films GROUP BY decade, genre ORDER BY decade, genre;
+```
+
+### 11.
+
+```sql
+SELECT genre, SUM(duration) AS total_duration
+FROM films GROUP BY genre ORDER BY total_duration ASC;
+```
