@@ -35,3 +35,62 @@ One.
 ### 4.
 
 Crow's foot notation.
+
+## Working with Multiple Tables
+
+### 1.
+
+```
+psql -d sql-course < theater_full.sql
+```
+
+### 2.
+
+```sql
+SELECT count(id) FROM tickets;
+```
+
+### 3.
+
+```sql
+SELECT count(DISTINCT customer_id) FROM tickets;
+```
+
+### 4.
+
+```sql
+SELECT count(DISTINCT t.customer_id) / count(DISTINCT c.id)::float * 100 AS percent
+FROM tickets as t
+RIGHT OUTER JOIN customers as c on c.id = t.customer_id;
+```
+
+### 5.
+
+```sql
+SELECT e.name, count(t.id) AS sales
+  FROM events AS e
+  INNER JOIN tickets AS t ON t.event_id = e.id
+  GROUP BY e.name
+  ORDER BY sales DESC;
+```
+
+### 6.
+
+```sql
+SELECT c.id, c.email, COUNT(DISTINCT t.event_id) AS event_count
+  FROM customers AS c
+  LEFT OUTER JOIN tickets AS t ON t.customer_id = c.id
+  GROUP BY c.id HAVING COUNT(DISTINCT t.event_id) > 2;
+```
+
+### 7.
+
+```sql
+SELECT e.name AS event, e.starts_at, sections.name AS section, seats.row, seats.number AS seat
+  FROM customers AS c
+  INNER JOIN tickets AS t ON t.customer_id = c.id
+  INNER JOIN events AS e ON t.event_id = e.id
+  INNER JOIN ceats ON t.seat_id = seats.id
+  INNER JOIN sections ON seats.section_id = sections.id
+  WHERE c.email = 'gennaro.rath@mcdermott.co';
+```
