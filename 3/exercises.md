@@ -94,3 +94,128 @@ SELECT e.name AS event, e.starts_at, sections.name AS section, seats.row, seats.
   INNER JOIN sections ON seats.section_id = sections.id
   WHERE c.email = 'gennaro.rath@mcdermott.co';
 ```
+
+## Foreign Keys
+
+### 1.
+
+```
+createdb foreign-keys
+psql -d foreign-keys < products_orders1.sql
+```
+
+### 2.
+
+```sql
+INSERT INTO products (name) VALUES ('small bolt');
+INSERT INTO products (name) VALUES ('large bolt');
+
+INSERT INTO orders (quantity, product_id) VALUES (10, 1);
+INSERT INTO orders (quantity, product_id) VALUES (25, 1);
+INSERT INTO orders (quantity, product_id) VALUES (15, 2);
+```
+
+### 3.
+
+```sql
+SELECT o.quantity, p.name
+  FROM orders AS o
+  INNER JOIN products AS p ON o.product_id = p.id;
+```
+
+### 4.
+
+In the current schema, yes.
+
+### 5.
+
+```sql
+ALTER TABLE orders ALTER COLUMN product_id SET NOT NULL;
+```
+
+### 6.
+
+```sql
+DELETE FROM orders WHERE id = 4;
+ALTER TABLE orders ALTER COLUMN product_id SET NOT NULL;
+```
+
+### 7.
+
+```sql
+CREATE TABLE reviews (
+  id serial PRIMARY KEY,
+  product_id integer REFERENCES products(id),
+  review text NOT NULL
+);
+```
+
+### 8.
+
+```sql
+INSERT INTO reviews (product_id, body) VALUES (1, 'a little small');
+INSERT INTO reviews (product_id, body) VALUES (1, 'very round!');
+INSERT INTO reviews (product_id, body) VALUES (2, 'could have been smaller');
+```
+
+### 9.
+
+False.
+
+## One-to-Many Relationships
+
+### 1.
+
+```sql
+INSERT INTO calls ("when", duration, contact_id) VALUES ('2016-01-18 14:47:00', 632, 6);
+```
+
+### 2.
+
+```sql
+SELECT "when", duration, contacts.first_name
+FROM calls
+INNER JOIN contacts ON calls.contact_id = contacts.id
+WHERE contacts.id != 6;
+```
+
+### 3.
+
+```sql
+INSERT INTO contacts (first_name, last_name, "number")
+  VALUES ('Merve', 'Elk', '6343511126');
+INSERT INTO calls ("when", duration, contact_id)
+  VALUES ('2016-01-17 11:52:00', 175, 26);
+
+INSERT INTO contacts (first_name, last_name, "number")
+  VALUES ('Sawa', 'Fyodorov', '6125594874');
+INSERT INTO calls ("when", duration, contact_id)
+  VALUES ('2016-01-18 21:22:00', 79, 27);
+```
+
+### 4.
+
+```sql
+ALTER TABLE contacts ADD CONSTRAINT number_unique UNIQUE (number);
+```
+
+### 5.
+
+```sql
+INSERT INTO contacts (first_name, last_name, "number") VALUES ('Nivi', 'Petrussen', '6125594874');
+```
+
+```
+ERROR:  duplicate key value violates unique constraint "number_unique"
+DETAIL:  Key (number)=(6125594874) already exists.
+```
+
+### 6.
+
+"When" is a reserved word in Postgres, so we need to quote it when using it as a column name.
+
+### 7.
+
+```
+Calls ->--- Contact
+```

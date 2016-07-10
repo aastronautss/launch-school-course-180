@@ -103,3 +103,26 @@ SELECT * FROM comments, users WHERE comments.user_id = users.id;
 ```
 
 gives us the inner join.
+
+## Foreign Keys
+
+Foreign keys can mean two things: a relationship between two rows by pointing to a specific row in another table using its primary key (A _foreign key column_), and a constraint that enforces certain rules about what values are permitted in a foreign key relationship (_foreign key constraint_).
+
+Foreign key columns are just the column on a table, while a constraing refers to the constraint put on that column.
+
+Constraint creation with table creation:
+
+```sql
+CREATE TABLE orders (
+  id serial PRIMARY KEY,
+  product_id integer REFERENCES products (id),
+  quantity integer NOT NULL
+);
+```
+Constraint creation post-hoc:
+
+```sql
+ALTER TABLE orders ADD CONSTRAINT orders_product_id_fkey FOREIGN KEY (product_id) products(id);
+```
+
+
