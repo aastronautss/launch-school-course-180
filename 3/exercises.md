@@ -219,3 +219,149 @@ DETAIL:  Key (number)=(6125594874) already exists.
 ```
 Calls ->--- Contact
 ```
+
+## Many-to-Many Relationships
+
+### 1.
+
+```sql
+SELECT b.id, b.author, string_agg(c.name, ', ') AS categories FROM books AS b
+  INNER JOIN books_categories ON books_categories.book_id = b.id
+  INNER JOIN categories AS c ON books_categories.category_id = c.id
+  GROUP BY b.id;
+```
+
+### 2.
+
+```sql
+ALTER TABLE books ALTER COLUMN title TYPE text;
+
+INSERT INTO books (author, title)
+  VALUES ('Lynn Sherr', 'Sally Ride: America''s First Woman in Space');
+INSERT INTO books (author, title)
+  VALUES ('Charlotte Brontë', 'Jane Eyre');
+INSERT INTO books (author, title)
+  VALUES ('Meeru Dhalwala and Vikram Vij', 'Vij''s: Elegant and Inspired Indian Cuisine');
+
+INSERT INTO categories (name)
+  VALUES ('Cookbook');
+INSERT INTO categories (name)
+  VALUES ('South Asia');
+INSERT INTO categories (name)
+  VALUES ('Space Exploration');
+
+INSERT INTO books_categories VALUES (4, 5);
+INSERT INTO books_categories VALUES (4, 1);
+INSERT INTO books_categories VALUES (4, 9);
+
+INSERT INTO books_categories VALUES (5, 2);
+INSERT INTO books_categories VALUES (5, 4);
+
+INSERT INTO books_categories VALUES (6, 7);
+INSERT INTO books_categories VALUES (6, 1);
+INSERT INTO books_categories VALUES (6, 8);
+```
+
+### 3.
+
+```sql
+ALTER TABLE books_categories ADD UNIQUE (book_id, category_id);
+```
+
+### 4.
+
+```sql
+SELECT c.name, COUNT(b.id) AS book_count, STRING_AGG(b.title, ', ') AS book_titles
+  FROM categories AS c
+  INNER JOIN books_categories ON books_categories.category_id = c.id
+  INNER JOIN books AS b ON books_categories.book_id = b.id
+  GROUP BY c.name ORDER BY c.name;
+```
+
+## Converting a 1:M Relationship to a M:M Relationship
+
+### 1.
+
+```
+psql -d films < films7.sql
+```
+
+### 2.
+
+```sql
+ALTER TABLE films ADD COLUMN id serial PRIMARY KEY;
+```
+
+### 3.
+
+```sql
+CREATE TABLE films_directors (
+  id serial PRIMARY KEY,
+  film_id integer REFERENCES films (id),
+  director_id integer REFERENCES directors (id)
+);
+```
+
+### 4.
+
+```sql
+INSERT INTO films_directors (film_id, director_id) VALUES (1, 1);
+INSERT INTO films_directors (film_id, director_id) VALUES (2, 2);
+INSERT INTO films_directors (film_id, director_id) VALUES (3, 3);
+INSERT INTO films_directors (film_id, director_id) VALUES (4, 4);
+INSERT INTO films_directors (film_id, director_id) VALUES (5, 5);
+INSERT INTO films_directors (film_id, director_id) VALUES (6, 6);
+INSERT INTO films_directors (film_id, director_id) VALUES (7, 3);
+INSERT INTO films_directors (film_id, director_id) VALUES (8, 7);
+INSERT INTO films_directors (film_id, director_id) VALUES (9, 8);
+INSERT INTO films_directors (film_id, director_id) VALUES (10, 4);
+```
+
+### 5.
+
+```sql
+ALTER TABLE films DROP COLUMN director_id;
+```
+
+### 6.
+
+```sql
+SELECT f.title, d.name
+  FROM films AS f
+  INNER JOIN films_directors ON films_directors.film_id = f.id
+  INNER JOIN directors AS d ON films_directors.director_id = d.id
+  ORDER BY films.title ASC;
+```
+
+### 7.
+
+```sql
+INSERT INTO films (title, year, genre, duration) VALUES ('Fargo', 1996, 'comedy', 98);
+INSERT INTO directors (name) VALUES ('Joel Coen');
+INSERT INTO directors (name) VALUES ('Ethan Coen');
+INSERT INTO films_directors (director_id, film_id) VALUES (9, 11);
+INSERT INTO films_directors (director_id, film_id) VALUES (10, 11);
+
+INSERT INTO films (title, year, genre, duration) VALUES ('No Country for Old Men', 2007, 'western', 122);
+INSERT INTO films_directors (director_id, film_id) VALUES (9, 12);
+INSERT INTO films_directors (director_id, film_id) VALUES (10, 12);
+
+INSERT INTO films (title, year, genre, duration) VALUES ('Sin City', 2005, 'crime', 124);
+INSERT INTO directors (name) VALUES ('Frank Miller');
+INSERT INTO directors (name) VALUES ('Robert Rodriguez');
+INSERT INTO films_directors (director_id, film_id) VALUES (11, 13);
+INSERT INTO films_directors (director_id, film_id) VALUES (12, 13);
+
+INSERT INTO films (title, year, genre, duration) VALUES ('Spy Kids', 2001, 'scifi', 88) RETURNING id;
+INSERT INTO films_directors (director_id, film_id) VALUES (12, 14);
+```
+
+### 8.
+
+```sql
+SELECT d.name AS director, count(f.id) AS films
+  FROM directors AS d
+  INNER JOIN films_directors ON films_directors.director_id = d.id
+  INNER JOIN films AS f ON films_directors.film_id = f.id
+  GROUP BY d.name ORDER BY films DESC, d.name ASC;
+```
