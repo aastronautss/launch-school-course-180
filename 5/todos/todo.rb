@@ -3,7 +3,7 @@ require "sinatra/reloader"
 require "sinatra/content_for"
 require "tilt/erubis"
 
-require_relative "session_persistence"
+require_relative "database_persistence"
 
 configure do
   enable :sessions
@@ -12,6 +12,10 @@ configure do
 
   set :bind, '0.0.0.0' if development?
 end
+
+# ====----------------------====
+# View Helpers
+# ====----------------------====
 
 helpers do
   def list_complete?(list)
@@ -45,6 +49,10 @@ helpers do
   end
 end
 
+# ====----------------------====
+# Route Helpers
+# ====----------------------====
+
 def load_list(id)
   list = @storage.find_list(id)
   return list if list
@@ -71,8 +79,12 @@ def error_for_todo(name)
 end
 
 before do
-  @storage = SessionPersistence.new(session)
+  @storage = DatabasePersistence.new(logger)
 end
+
+# ====----------------------====
+# Routes
+# ====----------------------====
 
 get "/" do
   redirect "/lists"
