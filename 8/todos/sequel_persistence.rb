@@ -41,12 +41,12 @@ class SequelPersistence
   end
 
   def delete_todo_from_list(list_id, todo_id)
-    DB[:todos].where(list_id: list_id, todo_id: todo_id).delete
+    DB[:todos].where(list_id: list_id, id: todo_id).delete
   end
 
   def update_todo_status(list_id, todo_id, new_status)
     DB[:todos].
-      where(list_id: list_id, todo_id: todo_id).
+      where(list_id: list_id, id: todo_id).
       update(completed: new_status)
   end
 
