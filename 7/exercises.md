@@ -12,7 +12,6 @@ createdb sequel-single-table
 
 ```ruby
 require 'sequel'
-require 'pg'
 
 DB = Sequel.connect "postgres://#{ENV['PSQL_USER']}:#{ENV['PSQL_PASSWORD']}@#{ENV['PSQL_HOST']}:#{ENV['PSQL_PORT']}/sequel-single-table"
 ```
@@ -135,4 +134,137 @@ end
 DB[:menu_items].insert item: 'omelette', prep_time: 10, ingredient_cost: 1.50, sales: 182, menu_price: 7.99
 DB[:menu_items].insert item: "tacos", prep_time: 5, ingredient_cost: 2, sales: 254, menu_price: 8.99
 DB[:menu_items].insert item: "oatmeal", prep_time: 1, ingredient_cost: 0.5, sales: 79, menu_price: 5.99
+```
+
+### 18.
+
+```ruby
+DB[:menu_items].select do
+  [ item,
+    (menu_price - ingredient_cost).as(profit) ]
+end.order(Sequel.desc(:profit)).first
+```
+
+### 19.
+
+```sql
+SELECT item, (menu_price - ingredient_cost) AS profit
+  FROM menu_items
+  ORDER BY profit DESC
+  LIMIT 1
+```
+
+### 20
+
+```ruby
+require 'sequel'
+
+def format_money(numeric)
+  format("$%0.2f", numeric)
+end
+
+DB = Sequel.connect "postgres://#{ENV['PSQL_USER']}:#{ENV['PSQL_PASSWORD']}@#{ENV['PSQL_HOST']}:#{ENV['PSQL_PORT']}/sequel-single-table"
+
+data = DB[:menu_items].select do
+  labor_calc = prep_time / 60.0 * 12
+  profit_calc = menu_price - ingredient_cost - labor_calc
+  [ item,
+    menu_price,
+    labor_calc.as(labor),
+    profit_calc.as(profit) ]
+end
+
+data.each do |item|
+  puts item[:item]
+  puts "menu_price: #{format_money item[:menu_price]}"
+  puts "ingredient cost: #{format_money item[:ingredient_cost]}"
+  puts "labor: #{format_money item[:labor]}"
+  puts "profit: #{format_money item[:profit]}"
+end
+```
+
+## Working with Multiple Tables
+
+### 1.
+
+```
+createdb sequel_multiple_tables
+```
+
+### 2.
+
+```
+psql -h 192.168.1.2 -p 5432 < theater_full.sql
+```
+
+### 3.
+
+```ruby
+require 'sequel'
+
+DB = Sequel.connect "postgres://#{ENV['PSQL_USER']}:#{ENV['PSQL_PASSWORD']}@#{ENV['PSQL_HOST']}:#{ENV['PSQL_PORT']}/sequel_multiple_tables"
+```
+
+### 4.
+
+```ruby
+DB[:tickets].count
+```
+
+### 5.
+
+```ruby
+DB[:tickets].distinct(:customer_id).count
+```
+
+### 6.
+
+```ruby
+DB[:tickets].select do
+  (count(tickets__customer_id).distinct / count(customers__id).distinct.cast(Float) * 100).as(:percent)
+end.right_outer_join(:customers, id: :customer_id).first
+```
+
+### 7.
+
+```ruby
+DB[:events].select do
+  [ events__name,
+    count(tickets__id).as(:sales) ]
+end.inner_join(:tickets, event_id: :id).
+    group(:events__id).
+    order(Sequel.desc(:sales)).
+    all
+```
+
+### 8.
+
+```ruby
+DB[:customers].select do
+  [ customers__id,
+    customers__email,
+    count(tickets__event_id).distinct ]
+end.
+  left_outer_join(:tickets, customer_id: :id).
+  group(:customers__id).
+  having { count(tickets__event_id).distinct >= 3 }.
+  all
+```
+
+### 9.
+
+```ruby
+DB[:tickets].select do
+  [ events__name.as(:event_name),
+    events__starts_at,
+    sections__name.as(:section),
+    seats__row,
+    seats__number.as(:seat_number) ]
+end.
+  join(:events, id: :event_id).
+  join(:customers, id: :tickets__customer_id).
+  join(:seats, id: :tickets__seat_id).
+  join(:sections, id: :seats__section_id).
+  where(customers__email: 'gennaro.rath@mcdermott.co').
+  all
 ```
